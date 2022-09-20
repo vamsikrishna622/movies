@@ -74,7 +74,13 @@ app.get("/movies/:movieId/", async (request, response) => {
     WHERE 
       movie_id=${movieId};
     `;
-  const movie = await db.get(getMovieQuery);
+  const movieObj = await db.get(getMovieQuery);
+  const movie = {
+    movieId: movieObj.movie_id,
+    directorId: movieObj.director_id,
+    movieName: movieObj.movie_name,
+    leadActor: movieObj.lead_actor,
+  };
   response.send(movie);
 });
 
@@ -150,7 +156,19 @@ app.get("/directors/:directorId/movies/", async (request, response) => {
     WHERE
     director_id = ${directorId};
     `;
-  const movieNames = await db.all(getMovieNames);
+  const movieNamesObj = await db.all(getMovieNames);
+  const convertDbObjToResponseObj = (movieNamesObj) => {
+    let movieNames = [];
+    for (eachMovie of movieNamesObj) {
+      const movieName = {
+        movieName: eachMovie.movie_name,
+      };
+      movieNames.push(movieName);
+    }
+    return movieNames;
+  };
+  const movieNames = convertDbObjToResponseObj(movieNamesObj);
+
   response.send(movieNames);
 });
 
