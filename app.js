@@ -24,31 +24,40 @@ const initializeDbAndServer = async () => {
 initializeDbAndServer();
 //API 1
 app.get("/movies/", async (request, response) => {
-  const getMoviesList = `
+  const getMoviesListQuery = `
     SELECT *
     FROM
-    moviesData.db;
+    movie;
     `;
-  const moviesList = await db.all(getMoviesList);
-  response.send(moviesList);
+  const moviesObj = await db.all(getMoviesListQuery);
+  const convertDbObjectToResponseObject = (moviesObj) => {
+    let movieNameList = [];
+    for (eachMovie of moviesObj) {
+      const movieNameObj = {
+        movieName: eachMovie.movie_name,
+      };
+      movieNameList.push(movieNameObj);
+    }
+    return movieNameList;
+  };
+  response.send(convertDbObjectToResponseObject(moviesObj));
 });
 
-//API 2
-
+///API 2
 app.post("/movies/", async (request, response) => {
   const movieDetails = request.body;
+  console.log(movieDetails);
+
   const { directorId, movieName, leadActor } = movieDetails;
 
-  const createNewMovie = `
-    INSERT INTO
-    movie(directorId, movieName, leadActor)
-    VALUES
-    ${directorId},
-    '${movieName}',
-    '${leadActor}';`;
-
-  const dbResponse = await db.run(createNewMovie);
-  const movieId = dbResponse.lastId;
+  const addMovieQuery = `
+  INSERT INTO
+  movie(director_id, movie_name, lead_actor)
+  VALUES
+  (${directorId},'${movieName}','${leadActor}');
+  `;
+  const dbResponse = await db.run(addMovieQuery);
+  const movieId = dbResponse.lastID;
   response.send("Movie Successfully Added");
 });
 
@@ -58,33 +67,36 @@ app.get("/movies/:movieId/", async (request, response) => {
   let { movieId } = request.params;
   movieId = parseInt(movieId);
 
-  const getMovie = `
+  const getMovieQuery = `
     SELECT *
-    FROM
-    movie
-    WHERE
-    movie_id=movieId;
+    FROM 
+      movie
+    WHERE 
+      movie_id=${movieId};
     `;
-  const movie = await db.get(getMovie);
+  const movie = await db.get(getMovieQuery);
   response.send(movie);
 });
 
 ///API 4
 app.put("/movies/:movieId/", async (request, response) => {
-  let movieId = request.params;
+  let { movieId } = request.params;
   movieId = parseInt(movieId);
   const movieDetails = request.body;
   const { directorId, movieName, leadActor } = movieDetails;
 
-  const updateMovie = `
+  const updateMovieQuery = `
     UPDATE
     movie
     SET
-    directorId=${directorId},
-    movieName=${movieName},
-    leadActor=${leadActor};
+    director_id=${directorId},
+    movie_name='${movieName}',
+    lead_actor='${leadActor}'
+    WHERE 
+    movie_id=${movieId};
     `;
-  await db.run(updateMovie);
+
+  await db.run(updateMovieQuery);
   response.send("Movie Details Updated");
 });
 
@@ -105,13 +117,25 @@ app.delete("/movies/:movieId/", async (request, response) => {
 
 ///API 6
 app.get("/directors/", async (request, response) => {
-  const getDirectors = `
+  const getDirectorsQuery = `
     SELECT *
     FROM
-    directors;
+    director;
     `;
-  const directors = await db.all(getDirectors);
-  response.send(directors);
+  const directorsObj = await db.all(getDirectorsQuery);
+  const convertDbObjToResponseObj = (directorsObj) => {
+    let directorsList = [];
+    for (eachDirector of directorsObj) {
+      const director = {
+        directorId: eachDirector.director_id,
+        directorName: eachDirector.director_name,
+      };
+      directorsList.push(director);
+    }
+    return directorsList;
+  };
+  const directorsList = convertDbObjToResponseObj(directorsObj);
+  response.send(directorsList);
 });
 
 ///API 7
